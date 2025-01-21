@@ -1,11 +1,182 @@
 <!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    <title>My test page</title>
-  </head>
-  <body>
-    <p>This is my page</p>
-  </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Health and Wellbeing Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #5a67d8;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        table th {
+            background-color: #5a67d8;
+            color: white;
+        }
+        button {
+            background-color: #5a67d8;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #434190;
+        }
+        .summary {
+            background: #eef2ff;
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Progress Health and Wellbeing Tracker</h1>
+        <form id="health-form">
+            <h2>Personal Information</h2>
+            <label for="name">Name:</label>
+            <input type="text" id="name" placeholder="Enter your name" required>
+
+            <label for="age">Age:</label>
+            <input type="number" id="age" placeholder="Enter your age" required>
+
+            <label for="gender">Gender:</label>
+            <select id="gender" required>
+                <option value="">Select your gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="trans-male">Trans Male</option>
+                <option value="trans-female">Trans Female</option>
+                <option value="non-binary">Non-binary/Other</option>
+            </select>
+
+            <h2>Daily Metrics</h2>
+            <table id="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Weight (kg)</th>
+                        <th>Height (cm)</th>
+                        <th>Calculated BMI</th>
+                        <th>Sleep (hrs)</th>
+                        <th>Water Intake (liters)</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Rows will be dynamically added via JavaScript -->
+                </tbody>
+            </table>
+            <button type="button" id="add-row">Add Day</button>
+
+            <div class="summary" id="summary-section">
+                <h2>Summary</h2>
+                <p><strong>Average BMI:</strong> <span id="average-bmi">-</span></p>
+                <p><strong>Total Sleep (hrs):</strong> <span id="total-sleep">-</span></p>
+                <p><strong>Total Water Intake (liters):</strong> <span id="total-water">-</span></p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableBody = document.getElementById('table-body');
+            const summarySection = document.getElementById('summary-section');
+            const averageBmiSpan = document.getElementById('average-bmi');
+            const totalSleepSpan = document.getElementById('total-sleep');
+            const totalWaterSpan = document.getElementById('total-water');
+
+            // Function to add a new row
+            document.getElementById('add-row').addEventListener('click', () => {
+                const rowIndex = tableBody.rows.length + 1;
+                const row = `
+                    <tr>
+                        <td>Day ${rowIndex}</td>
+                        <td><input type="number" class="weight" placeholder="Weight"></td>
+                        <td><input type="number" class="height" placeholder="Height"></td>
+                        <td><span class="bmi-result">-</span></td>
+                        <td><input type="number" class="sleep" placeholder="Sleep"></td>
+                        <td><input type="number" class="water" placeholder="Water"></td>
+                        <td><input type="text" class="notes" placeholder="Notes"></td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+
+                // Add event listeners to recalculate summary whenever values are updated
+                tableBody.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('input', calculateSummary);
+                });
+            });
+
+            // Function to calculate summary
+            const calculateSummary = () => {
+                let totalBmi = 0, bmiCount = 0, totalSleep = 0, totalWater = 0;
+
+                Array.from(tableBody.rows).forEach(row => {
+                    const weight = parseFloat(row.querySelector('.weight')?.value) || 0;
+                    const heightCm = parseFloat(row.querySelector('.height')?.value) || 0;
+                    const heightM = heightCm / 100;
+
+                    // Calculate BMI
+                    let bmi = 0;
+                    if (weight > 0 && heightM > 0) {
+                        bmi = weight / (heightM * heightM);
+                        row.querySelector('.bmi-result').innerText = bmi.toFixed(2);
+                        totalBmi += bmi;
+                        bmiCount++;
+                    } else {
+                        row.querySelector('.bmi-result').innerText = '-';
+                    }
+
+                    // Calculate total sleep and water intake
+                    totalSleep += parseFloat(row.querySelector('.sleep')?.value) || 0;
+                    totalWater += parseFloat(row.querySelector('.water')?.value) || 0;
+                });
+
+                // Update summary values
+                averageBmiSpan.innerText = bmiCount > 0 ? (totalBmi / bmiCount).toFixed(2) : '-';
+                totalSleepSpan.innerText = totalSleep.toFixed(2);
+                totalWaterSpan.innerText = totalWater.toFixed(2);
+            };
+
+            // Recalculate summary whenever input fields change
+            tableBody.addEventListener('input', calculateSummary);
+        });
+    </script>
+</body>
 </html>
